@@ -1,0 +1,149 @@
+
+<!-- Christopher deWolf 
+		Date: 02/04/18
+		Math Expression Checker. The following code uses regular expressions to scan inputs and checks
+								 whether it is a valid math expression or not.			 -->
+
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+<title>Chris deWolf's Checker</title>
+<script type="text/javascript">
+
+
+function check()
+{
+	//clear results from the box
+	clear_results();
+	
+	// Get the input text
+	var text = document.getElementById("text").value; 
+	
+	//log in the initial input to the console for debugging
+	console.log("before: " + text);
+	
+	//take out spaces from the expression
+	text = text.replace(/\s/g, '');
+	
+	// uses javascript backreference of $1 for entire expression to add spaces between each token
+	text = text.replace(/([+\-*/\(\)\[\]])/g, " $1 ");
+	
+	// trim the spaces on the ends
+	text = text.trim();
+	
+	// replaces two or more internal spaces with a single space
+	text = text.replace(/\s\s+/g, ' ');
+	
+	// Cleaned up text to the console for debugging
+	console.log("after: || "+ text +" ||");
+	
+	//put cleaned up text in top box
+	document.getElementById("text").value = text; 
+	
+	// Split the text into tokens
+	var tokens = text.split(/\s+/);
+
+
+	var errorcount = 0;
+	
+	var stack = [];
+	
+	// colon can be used to list objects in a variable to use later
+  	var open = { '{': '}', '[': ']', '(': ')' };
+  	var closed = { '}': true, ']': true, ')': true };
+	
+	// Single token cannot be an expression
+	if( tokens.length <= 1 ){
+		if (/[^0-9+\-*/\(\)]/.test(tokens[0])){
+			append_result("Error: A mathematical expression must have more than one numbers or symbols.\n");
+			errorcount++;
+		}
+		else{
+			append_result("Error: Not enough tokens for a mathematical expression.\n");
+			errorcount++;
+		}
+	}
+		
+	// Check validity of first token
+	if (/[^0-9\(\-\[]/.test(tokens[0])){
+		append_result("Error at token " + 1 + ": First token cannot be \"" + tokens[0] + "\"\n");
+		errorcount++;
+	}
+													
+	// Iterate through tokens
+	for(i=0; i<tokens.length; i++)
+	{
+		// Check for invalid tokens
+		if (/[^0-9+\-*/\(\)\[\]]/.test(tokens[i])){
+			append_result("Error at token " + (i+1) + ": illegal token \"" + tokens[i] + "\"\n");
+			errorcount++;
+		}
+		
+		// Detect two operators in a row (including right parenthesis) that are not allowed
+		if ( /[+\-*/]/.test(tokens[i]) && /[+*/\)]/.test(tokens[i+1])){
+			append_result("Error at token " + (i+1) + ": you cannot have " + tokens[i] + " followed by " + tokens[i+1] + "\n");
+			errorcount++;
+		}
+		
+		//Check for balancing parenthesis, brackets, etc
+		var balance = tokens[i];
+    	if( open[balance]){				//push open tokens onto stack
+      		stack.push(balance);
+    	} 
+    	else if( closed[balance])		
+    	{
+      		if( open[stack.pop()] !== balance)	// run into a closed and there is no open from top of stack then unbalanced
+      		{
+      			append_result("Error at token " + (i+1) + ": Unbalanced mathematical expression:  " + tokens[i] + "\n");
+      			errorcount++;
+      		}
+    	}
+	}
+
+	if( !(stack.length === 0)){
+		append_result("Error at token " + (i+1) + ": Unbalanced mathematical expression, check parenthesis.\n");
+      	errorcount++;
+	}
+	
+	// Check of last token for validity
+	if (/[^0-9\)\]]/.test(tokens[tokens.length-1])){
+		append_result("Error at token " + (tokens.length) + ": last token cannot be \"" + tokens[tokens.length-1] + "\"\n");
+		errorcount++;
+	}
+	
+	// Output the results
+	if( errorcount == 0){
+		append_result("ACCEPT");
+	}
+	else{
+		append_result("Number of errors found: " + errorcount + "\n");
+		append_result("REJECT");
+	}
+}
+
+function append_result(token)
+{
+	document.getElementById("results").value += token;
+}
+
+function clear_results()				//clears results and input
+{
+	document.resultform.reset();
+}
+
+
+</script>
+</head>
+<body bgcolor="#F0F8FF">
+<h1>Chris deWolf's Checker</h1>
+<p>Type text to be checked below and click "Check". </p>
+<form name="checker" action="javascript:check()">
+	<p><textarea rows="9" id="text" name="text" cols="99"></textarea><br>
+	<input type="submit" value="Check" name="">
+	<input type="reset" value="Reset" name="" onclick="javascript:clear_results()"></p>
+</form>
+<h2>Result</h2>
+<form name="resultform">
+	<p><textarea rows="10" id="results" name="results" cols="99" readonly="readonly"></textarea></p>
+</form>
+<p>&nbsp;</p>
+
+</body></html>
